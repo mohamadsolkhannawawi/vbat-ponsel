@@ -364,19 +364,20 @@ class _ShopPageState extends State<ShopPage> {
           // --- 7. Grid Rekomendasi with sponsor banners ---
           ..._buildRecommendationSlivers(filteredProducts, effectiveItemCount),
 
+          // Skeleton loading placeholder (2 kolom, 4 card shimmer)
           if (_isLoadingMore)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(_primaryBlue),
-                    ),
-                  ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  childAspectRatio: 0.68,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) => const _ShimmerProductCard(),
+                  childCount: 4,
                 ),
               ),
             ),
@@ -401,13 +402,13 @@ class _ShopPageState extends State<ShopPage> {
 
       slivers.add(
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.65,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 0.68,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
               final productIndex = (i + index) % products.length;
@@ -738,101 +739,176 @@ class _ShopPageState extends State<ShopPage> {
     final String sold = product["sold"]!;
     final String image = product["image"]!;
 
+    // Location & shipping tags
+    final List<String> locations = ["Jakarta Selatan", "Bandung", "Surabaya", "Tangerang", "Bekasi"];
+    final String location = locations[title.length % locations.length];
+    final bool hasFreeShipping = (title.length % 3 == 0);
+    final bool hasCOD = (title.length % 4 == 0);
+
     return GestureDetector(
       onTap: () => context.push('/product-detail', extra: product),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: Image.asset(
-                    image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Center(child: Icon(Icons.image, color: Colors.grey)),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Image Area
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: Stack(
                 children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                      child: Image.asset(
+                        image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(child: Icon(Icons.image, color: Colors.grey)),
+                      ),
+                    ),
+                  ),
+                  // Promo tag
                   if (isPromoXtra)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        "PROMO XTRA",
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "PROMO XTRA",
+                          style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
-                  Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: _textDark,
-                      height: 1.2,
+                  // Free shipping badge at bottom
+                  if (hasFreeShipping)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade600,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.local_shipping_outlined, color: Colors.white, size: 10),
+                            SizedBox(width: 3),
+                            Text(
+                              "Gratis Ongkir",
+                              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star_rounded,
-                        color: Colors.amber,
-                        size: 12,
-                      ),
-                      Text(
-                        " $rating ",
-                        style: TextStyle(fontSize: 10, color: _textGray),
-                      ),
-                      Text(
-                        "• $sold terjual",
-                        style: TextStyle(fontSize: 10, color: _textGray),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    price,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _orangeSale,
-                      fontSize: 14,
-                    ),
-                  ),
                 ],
+              ),
+            ),
+            // Info Area
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nama produk - max 2 baris
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _textDark,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Rating & sold
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                        const SizedBox(width: 2),
+                        Text(
+                          rating,
+                          style: TextStyle(fontSize: 10, color: _textGray),
+                        ),
+                        Text(
+                          " • $sold terjual",
+                          style: TextStyle(fontSize: 10, color: _textGray),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Harga - paling menonjol
+                    Text(
+                      price,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: _primaryBlue,
+                        fontSize: 14,
+                      ),
+                    ),
+                    // Lokasi & COD
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on_outlined, size: 10, color: _textGray),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 9, color: _textGray),
+                            ),
+                          ),
+                          if (hasCOD) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.green, width: 0.5),
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                              child: const Text(
+                                "COD",
+                                style: TextStyle(fontSize: 7, color: Colors.green, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1044,6 +1120,117 @@ class _AutoSlidingBrandCardsState extends State<_AutoSlidingBrandCards> {
           ),
         );
       },
+    );
+  }
+}
+
+// --- Shimmer Skeleton Product Card (Loading Placeholder) ---
+class _ShimmerProductCard extends StatefulWidget {
+  const _ShimmerProductCard();
+
+  @override
+  State<_ShimmerProductCard> createState() => _ShimmerProductCardState();
+}
+
+class _ShimmerProductCardState extends State<_ShimmerProductCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image placeholder
+              AspectRatio(
+                aspectRatio: 1.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    gradient: LinearGradient(
+                      begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+                      end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+                      colors: [
+                        Colors.grey.shade200,
+                        Colors.grey.shade100,
+                        Colors.grey.shade200,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Text placeholders
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title line 1
+                      _buildShimmerBar(width: double.infinity, height: 10),
+                      const SizedBox(height: 6),
+                      // Title line 2
+                      _buildShimmerBar(width: 100, height: 10),
+                      const Spacer(),
+                      // Rating line
+                      _buildShimmerBar(width: 80, height: 8),
+                      const SizedBox(height: 6),
+                      // Price line
+                      _buildShimmerBar(width: 90, height: 14),
+                      const SizedBox(height: 4),
+                      // Location line
+                      _buildShimmerBar(width: 70, height: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerBar({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: LinearGradient(
+          begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+          end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+          colors: [
+            Colors.grey.shade200,
+            Colors.grey.shade100,
+            Colors.grey.shade200,
+          ],
+        ),
+      ),
     );
   }
 }

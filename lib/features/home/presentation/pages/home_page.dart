@@ -482,13 +482,13 @@ class _HomePageState extends State<HomePage> {
 
       slivers.add(
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.66,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 0.68,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -520,21 +520,21 @@ class _HomePageState extends State<HomePage> {
       i = end;
     }
 
-    // 7. Loading indicator
+    // 7. Skeleton loading placeholder (2 kolom, 4 card shimmer)
     if (_isLoadingMore) {
       slivers.add(
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(_primaryBlue),
-                ),
-              ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 0.68,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => const _ShimmerProductCard(),
+              childCount: 4,
             ),
           ),
         ),
@@ -772,6 +772,11 @@ class _HomePageState extends State<HomePage> {
   // --- Grid Card Builder (Shopee E-commerce Style) ---
   Widget _buildGridCard(BuildContext context, Map<String, dynamic> item) {
     final bool isProduct = item["type"] == "product";
+    // Random location & shipping tags
+    final List<String> locations = ["Jakarta Selatan", "Bandung", "Surabaya", "Tangerang", "Bekasi"];
+    final String location = locations[item["name"].toString().length % locations.length];
+    final bool hasFreeShipping = (item["name"].toString().length % 3 == 0);
+
     return GestureDetector(
       onTap: () {
         if (isProduct) {
@@ -783,32 +788,32 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 4,
-              offset: const Offset(0, 2),
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image / Preview Area
-            Expanded(
+            // Image Area with AspectRatio for consistent sizing
+            AspectRatio(
+              aspectRatio: 1.0,
               child: Stack(
                 children: [
                   Container(
                     width: double.infinity,
-                    height: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                     ),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                       child: !isProduct && item["videoUrl"] != null
                           ? VideoPreviewWidget(
                               videoUrl: item["videoUrl"],
@@ -817,6 +822,8 @@ class _HomePageState extends State<HomePage> {
                           : Image.asset(
                               item["image"],
                               fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
                               errorBuilder: (context, error, stackTrace) => Center(
                                 child: Icon(
                                   isProduct ? Icons.handyman_rounded : Icons.play_circle_fill_rounded,
@@ -827,14 +834,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                     ),
                   ),
+                  // Badge tag
                   Positioned(
-                    top: 8,
-                    left: 8,
+                    top: 6,
+                    left: 6,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         color: isProduct ? _primaryBlue : Colors.red,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         isProduct ? "PRODUK" : "KURSUS",
@@ -842,62 +850,115 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
+                  // Free shipping badge
+                  if (isProduct && hasFreeShipping)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade600,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.local_shipping_outlined, color: Colors.white, size: 10),
+                            SizedBox(width: 3),
+                            Text(
+                              "Gratis Ongkir",
+                              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
             // Info Area
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isProduct ? item["name"] : item["title"],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _textDark,
-                      height: 1.2,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nama produk/kursus - max 2 baris
+                    Text(
+                      isProduct ? item["name"] : item["title"],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _textDark,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  if (isProduct)
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
-                        Text(
-                          " ${item['rating']} • ${item['sold']} terjual",
-                          style: TextStyle(fontSize: 10, color: _textGray),
-                        ),
-                      ],
-                    )
-                  else
-                    Row(
-                      children: [
-                        const Icon(Icons.person_rounded, color: Colors.grey, size: 12),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            item["instructor"],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 6),
+                    // Rating & sold / instructor
+                    if (isProduct)
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                          const SizedBox(width: 2),
+                          Text(
+                            "${item['rating']}",
                             style: TextStyle(fontSize: 10, color: _textGray),
                           ),
+                          Text(
+                            " • ${item['sold']} terjual",
+                            style: TextStyle(fontSize: 10, color: _textGray),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        children: [
+                          const Icon(Icons.person_rounded, color: Colors.grey, size: 12),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              item["instructor"],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 10, color: _textGray),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 4),
+                    // Harga - paling menonjol
+                    Text(
+                      isProduct ? item["price"] : (item["badge"] ?? "GRATIS"),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isProduct ? _primaryBlue : _primaryBlue,
+                        fontSize: 14,
+                      ),
+                    ),
+                    // Lokasi
+                    if (isProduct)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on_outlined, size: 10, color: _textGray),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(
+                                location,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 9, color: _textGray),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isProduct ? item["price"] : (item["badge"] ?? "GRATIS"),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isProduct ? _orangeSale : _primaryBlue,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -1388,6 +1449,117 @@ class PartnerLogoCardWidget extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Shimmer Skeleton Product Card (Loading Placeholder) ---
+class _ShimmerProductCard extends StatefulWidget {
+  const _ShimmerProductCard();
+
+  @override
+  State<_ShimmerProductCard> createState() => _ShimmerProductCardState();
+}
+
+class _ShimmerProductCardState extends State<_ShimmerProductCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image placeholder
+              AspectRatio(
+                aspectRatio: 1.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    gradient: LinearGradient(
+                      begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+                      end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+                      colors: [
+                        Colors.grey.shade200,
+                        Colors.grey.shade100,
+                        Colors.grey.shade200,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Text placeholders
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title line 1
+                      _buildShimmerBar(width: double.infinity, height: 10),
+                      const SizedBox(height: 6),
+                      // Title line 2
+                      _buildShimmerBar(width: 100, height: 10),
+                      const Spacer(),
+                      // Rating line
+                      _buildShimmerBar(width: 80, height: 8),
+                      const SizedBox(height: 6),
+                      // Price line
+                      _buildShimmerBar(width: 90, height: 14),
+                      const SizedBox(height: 4),
+                      // Location line
+                      _buildShimmerBar(width: 70, height: 8),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerBar({required double width, required double height}) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: LinearGradient(
+          begin: Alignment(-1.0 + 2.0 * _controller.value, 0),
+          end: Alignment(-1.0 + 2.0 * _controller.value + 1.0, 0),
+          colors: [
+            Colors.grey.shade200,
+            Colors.grey.shade100,
+            Colors.grey.shade200,
           ],
         ),
       ),

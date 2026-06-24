@@ -40,11 +40,12 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
+  // Urutan: Beranda(0), Shop(1), Belajar(2), Forum(3), Akun(4)
   List<Widget> get _pages => [
     const HomePage(),
     const ShopPage(),
-    const ForumPage(),
     const LearningPage(),
+    const ForumPage(),
     ValueListenableBuilder<bool>(
       valueListenable: SessionManager.isLoggedIn,
       builder: (context, isLoggedIn, child) {
@@ -103,9 +104,9 @@ class _MainScaffoldState extends State<MainScaffold> {
                           ],
                         ),
                       ),
-                      // Spacer untuk tab tengah Forum
+                      // Spacer untuk tab tengah Belajar
                       const SizedBox(width: 80),
-                      // Kanan: Belajar & Akun
+                      // Kanan: Forum & Akun
                       SizedBox(
                         width: (screenWidth - 80) / 2 - 12,
                         child: Row(
@@ -113,9 +114,9 @@ class _MainScaffoldState extends State<MainScaffold> {
                           children: [
                             _buildNavItem(
                               3,
-                              Icons.school_rounded,
-                              Icons.school_outlined,
-                              "Belajar",
+                              Icons.forum_rounded,
+                              Icons.forum_outlined,
+                              "Forum",
                             ),
                             _buildNavItem(
                               4,
@@ -131,11 +132,40 @@ class _MainScaffoldState extends State<MainScaffold> {
                 ),
               ),
             ),
-            // Tombol Forum tengah yang melayang
+            // Tombol Belajar tengah yang melayang
             Positioned(
               top: -24,
               left: screenWidth / 2 - 32,
-              child: _buildCenterForumItem(),
+              child: _buildCenterBelajarItem(),
+            ),
+            // Label Belajar di bawah, sejajar dengan label nav lain
+            Positioned(
+              bottom: 8,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: GestureDetector(
+                  onTap: () {
+                    if (!SessionManager.isLoggedIn.value) {
+                      context.push('/login');
+                    } else {
+                      SessionManager.currentTabIndex.value = 2;
+                    }
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: Text(
+                      "Belajar",
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 10,
+                        fontWeight: _currentIndex == 2 ? FontWeight.w700 : FontWeight.w500,
+                        color: _currentIndex == 2 ? _primaryBlue : Colors.grey.shade500,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -143,7 +173,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _buildCenterForumItem() {
+  Widget _buildCenterBelajarItem() {
     bool isSelected = _currentIndex == 2;
     return GestureDetector(
       onTap: () {
@@ -153,50 +183,35 @@ class _MainScaffoldState extends State<MainScaffold> {
           SessionManager.currentTabIndex.value = 2;
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isSelected
-                    ? [const Color(0xFF1B4F9B), const Color(0xFF3B7ED9)]
-                    : [const Color(0xFFEFF6FF), Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _primaryBlue.withValues(alpha: isSelected ? 0.4 : 0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-              border: Border.all(
-                color: isSelected ? Colors.white : Colors.grey.shade300,
-                width: 3.5,
-              ),
-            ),
-            child: Icon(
-              Icons.forum_rounded,
-              color: isSelected ? Colors.white : _primaryBlue,
-              size: 28,
-            ),
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isSelected
+                ? [const Color(0xFF1B4F9B), const Color(0xFF3B7ED9)]
+                : [const Color(0xFFEFF6FF), Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 4),
-          Text(
-            "Forum",
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-              color: isSelected ? _primaryBlue : Colors.grey.shade600,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: _primaryBlue.withValues(alpha: isSelected ? 0.4 : 0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
+          ],
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.grey.shade300,
+            width: 3.5,
           ),
-        ],
+        ),
+        child: Icon(
+          Icons.school_rounded,
+          color: isSelected ? Colors.white : _primaryBlue,
+          size: 28,
+        ),
       ),
     );
   }
@@ -210,7 +225,8 @@ class _MainScaffoldState extends State<MainScaffold> {
     bool isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () {
-        if ((index == 2 || index == 3) && !SessionManager.isLoggedIn.value) {
+        if ((index == 3) && !SessionManager.isLoggedIn.value) {
+          // Forum memerlukan login
           context.push('/login');
         } else {
           SessionManager.currentTabIndex.value = index;
